@@ -84,7 +84,7 @@ class Chips:
         self.bet = 0
 
     def win_bet(self):
-        self.total += self.bet
+        self.total += self.bet*2
 
     def lose_bet(self):
         self.total -= self.bet
@@ -122,6 +122,17 @@ def hit_or_stand(deck, hand):
             continue
         break
 
+# These function's display the player's and the dealer's hands
+def show_some(player, dealer):
+    print(f"DEALER'S HAND: {dealer.cards[1]}\n\n")  # Only 1 card shown until player stands
+    print("PLAYER'S HAND: ", *player.cards, sep='\n')
+    print("Player's hand value: {}".format(player.value))
+
+def show_all(player, dealer):
+    print("DEALER'S HAND: ", *dealer.cards, sep='\n')
+    print("PLAYER'S HAND: ", *player.cards, sep='\n')
+
+
 # These functions will handle the situations in which the game will end.
 
 def player_busts(player, dealer, chips):
@@ -154,7 +165,6 @@ def dealer_wins(player, dealer, chips):
     print("Dealer wins!")
     chips.lose_bet()
 
-
 def push(player, dealer):
     '''
     Player and Dealer achieve the same value after player stands and dealer is at or above 17
@@ -162,14 +172,74 @@ def push(player, dealer):
     '''
     print("Push!")
 
-# TEST DECK
-test_deck = Deck()
-test_deck.shuffle_deck()
 
-# TEST PLAYER
-test_player = Hand()
-test_player.add_card(test_deck.deal_one()) # Deal one card to the player
-test_player.value
-print(test_player.cards[0])
-test_player.add_card(test_deck.deal_one())
-test_player.value
+##  GAME LOGIC  ##
+
+player_chips = Chips()
+while True:
+    print ("Welcome to Blackjack!")
+    #Create and shuffle deck
+    deck = Deck()
+    deck.shuffle_deck()
+
+    #take player's bet before cards are dealt
+    take_bet(player_chips)
+
+    # Create players and deal 2 cards to each player
+    dealer_hand = Hand()
+    player_hand = Hand()
+    player_hand.add_card(deck.deal_one())
+    dealer_hand.add_card(deck.deal_one())
+    player_hand.add_card(deck.deal_one())
+    dealer_hand.add_card(deck.deal_one())
+
+
+    # check for Blackjack where player automatically wins
+    show_some(player_hand, dealer_hand)
+    if player_hand.value == 21:
+        player_wins(player_hand,dealer_hand,player_chips)
+        print("\nPlayer has {} chips remaining".format(player_chips.total))
+        new_game = input("Would you like to play another hand? y/n").lower()
+
+        if new_game[0] == 'y':
+            playing = True
+        else:
+            print("Thank you for playing!")
+            break
+    else:
+        while playing:
+            # prompt the player for whether they would like to hit or stand
+            hit_or_stand(deck, player_hand)
+            # show cards but keep one dealer card hidden, show_some
+            show_some(player_hand, dealer_hand)
+            # if player's hand exceeds 21, run player_busts and break out of the loop
+            if player_hand.value > 21:
+                player_busts(player_hand, dealer_hand, player_chips)
+                break
+
+        # After player stands and hasn't busted, play dealer's hand until dealer reaches 17
+        if player_hand.value <= 21:
+
+            while dealer_hand.value < 17:
+                hit(deck, dealer_hand)
+            # show all cards
+            show_all(player_hand, dealer_hand)
+            # Run appropriate win scenario.
+            if dealer_hand.value > 21:
+                dealer_busts(player_hand, dealer_hand, player_chips)
+            elif dealer_hand.value > player_hand.value:
+                dealer_wins(player_hand, dealer_hand, player_chips)
+            elif dealer_hand.value < player_hand.value:
+                player_wins(player_hand, dealer_hand, player_chips)
+            else:
+                push(player_hand, dealer_hand)
+        # Inform plaayer of their remaining chips
+        print("\nPlayer has {} chips remaining".format(player_chips.total))
+        # Prompt player to play another hand
+        new_game = input("Would you like to play another hand? y/n").lower()
+
+        if new_game[0] == 'y':
+            playing = True
+        else:
+            print("Thank you for playing!")
+            break
